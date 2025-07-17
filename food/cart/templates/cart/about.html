@@ -1,0 +1,26 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<div class="about-content">
+<h1>About</h1>
+
+<p>This is a project to help you plan weekly meals, track leftovers, and generate shopping lists efficiently.</p><p>Create an account on the <a href="{% url 'user_page' %}"><em>user page</em></a> so as to save your meals across devices. Otherwise, you can use this service anonymously, but please be aware that your data will only be saved on this browser.</p><p>Note that this web app works best on desktop.</p>
+
+<h3>How it works</h3>
+<ol>
+    <li>
+        <strong>Set up</strong> your ingredients in the <a href="{% url 'edit-ingredients-view' %}"><em>Edit Ingredients page</em></a>, assigning a portions count: how many meals that specific ingredient can be used for.
+    </li>
+    <li><strong>Create</strong> your meals in the <a href="{% url 'edit-meals-view' %}"><em>Edit Meals page</em></a>, using those ingredients.</li>
+    <li><strong>Plan</strong> your week on the <a href="{% url 'index' %}"><em>main page</em></a> by selecting meals for each slot or leaving some empty for when you eat-out</li>
+    <li>As the planner is filled, 
+        <ul>
+            <li>A shopping list is dynamically generated</li>
+            <li>Leftovers are tracked</li>
+            <li>Suggestions help you use leftovers efficiently.</li>
+        </ul>
+    </li>
+    <li> Use, at the end of the week, the <em>reset</em> button at the bottom of the home page to start planning for the following one.</li>
+</ol>
+</div>
+{% endblock %}

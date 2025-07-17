@@ -1,0 +1,15 @@
+{% for meal in meals %}
+  <div>
+    {{ meal.name }}
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="remove_meal">
+        <button type="submit"  name="removed_id" value="{{ day_index }}_{{ meal_type }}_{{ meal.id }}" class="delete-meal-btn">x</button>
+    </form>
+  </div>
+{% endfor %}
+
+<form method="get" action="{% url 'select-meal' %}" style="display:inline;">
+  <input type="hidden" name="slot_id" value="{{ day_index }}_{{ meal_type }}">
+  <button type="submit" class="add-meal-btn"  data-slot="{{ day_index }}_{{ meal_type }}">+</button>
+</form>

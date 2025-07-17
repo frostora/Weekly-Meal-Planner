@@ -1,0 +1,169 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<div class="meal-box">
+    {% if editing %}
+    <h1>Edit Meal</h1>
+    {% else %}
+    <h1>Create a Meal</h1>
+    {% endif %}
+
+    <div class="content-sections">
+        <div class="form-section">
+                <h2>Meal Name</h2>
+                <input type="text" form="create_meal" id="name_input" name="meal_name" placeholder="Enter name" required maxlength="64" value="{% if editing %}{{ chosen_meal.name }}{% endif %}"/>
+            <div class="separator"></div>   
+                <div class="ingredients-section">
+                    {% include "cart/edit-ingredients.html" %}
+                </div>
+            <div class="separator"></div>   
+            <h2>Category</h2>
+            <label>
+                <input type="radio" name="category" form="create_meal" value="pasta" {% if editing and chosen_meal.category == "pasta" %}checked{% endif %} />
+                Pasta / Rice
+            </label><br>
+            
+            <label>
+                <input type="radio" name="category" form="create_meal" value="meat" {% if editing and chosen_meal.category == "meat" %}checked{% endif %} />
+                Meat / Poultry
+            </label><br>
+            
+            <label>
+                <input type="radio" name="category" form="create_meal" value="fish" {% if editing and chosen_meal.category == "fish" %}checked{% endif %}/>
+                Fish / Seafood
+            </label><br>
+            
+            <label>
+                <input type="radio" name="category" form="create_meal" value="eggs" {% if editing and chosen_meal.category == "eggs" %}checked{% endif %} />
+                Eggs / Dairy
+            </label><br>
+
+            <label>
+                <input type="radio" name="category" form="create_meal" value="other" {% if editing and chosen_meal.category == "other" %}checked{% endif %}/>
+                Other
+            </label>
+        </div>
+
+    </div>
+    <div class="button-group">
+        <form  method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="discard_changes">
+            <input id="discard_btn" type="submit" class="discard-btn" value = "Discard">
+        </form>
+        {% if editing%}
+            <form id="create_meal" method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="save_changes">
+                <input id="save_btn" type="submit" class="confirm-btn" value="Save">
+            </form>
+        {% else %}
+            <form id="create_meal" method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="save_new_changes">
+                <input id="save_btn" type="submit" class="confirm-btn" value="Create">
+            </form>
+        {% endif %}
+    </div>
+        {% if editing %}
+
+            <form id="reset-form" method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="delete_meal">
+            <button type="button" class="delete-btn" id="reset-btn">DELETE MEAL</button>
+        </form>
+
+        <div id="confirm-modal" class="modal hidden">
+            <div class="modal-content">
+                <p>Are you sure you want to delete this meal?</p>
+                <button id="confirm-yes" class="confirm-btn-reset">Yes</button>
+                <button id="confirm-no" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+        {% endif %}
+</div>
+
+<script>
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("name_input");
+    const button = document.getElementById("save_btn");
+    const radios = document.getElementsByName('category');
+
+    button.disabled = true;
+
+    const nameInput = document.getElementById("name_input");
+    const categoryRadios = document.getElementsByName("category");
+
+
+    function reset_values(){
+        localStorage.removeItem("meal_name");
+        localStorage.removeItem("category");
+    }
+    document.getElementById("save_btn").addEventListener("click", function() {
+        localStorage.setItem('showToast', 'Meal saved successfully!');
+        reset_values();
+    });
+        document.getElementById("discard_btn").addEventListener("click", function() {
+        reset_values();
+    });
+    
+    delete_btn = document.getElementById("reset-btn")
+    
+    if (delete_btn){
+        delete_btn.addEventListener("click", function() {
+        reset_values();
+    });
+    document.getElementById('reset-btn').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        });
+        document.getElementById('confirm-no').addEventListener('click', () => {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        });
+
+        document.getElementById('confirm-yes').addEventListener('click', () => {
+            document.getElementById('reset-form').submit();
+        });
+    }
+
+    // --- Restore saved values on load ---
+    const savedName = localStorage.getItem("meal_name");
+    if (savedName) {
+        nameInput.value = savedName;
+    }
+
+    const savedCategory = localStorage.getItem("category");
+    if (savedCategory) {
+        for (let radio of categoryRadios) {
+            if (radio.value === savedCategory) {
+                radio.checked = true;
+                break;
+            }
+        }
+    }
+
+    
+    function validate() {
+        const val = input.value.trim().toLowerCase();
+        localStorage.setItem("meal_name", val);
+        
+        const selectedRadio = Array.from(radios).find(radio => radio.checked);
+        if (selectedRadio) {
+            localStorage.setItem("category", selectedRadio.value);
+        
+            if (val.length > 64 || val === "" || !selectedRadio.checked)
+                button.disabled = true;
+            else
+                button.disabled = false;
+        }        
+    }
+
+    input.addEventListener("input", validate);
+    radios.forEach(radio => radio.addEventListener('change', validate));
+
+    validate(); // initial check on page load
+});
+
+</script>
+{% endblock %}

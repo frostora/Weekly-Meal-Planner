@@ -1,0 +1,49 @@
+<div>
+    <h2>Ingredients:</h2>
+    <ul>
+        {% for i in combined_ingredients %}
+        <li>{{i.name}}
+            <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="remove_ingredient">
+            <input type="hidden" name="meal_id" value="{{ chosen_meal.id }}">
+            <button type="submit" class="delete-meal-btn" name="ingredient_name" value="{{ i.name }}">x</button>
+        </form></li>
+        {% endfor %}
+    </ul>
+
+
+    <form method="post">
+    {% csrf_token %}
+        <input name="ingredient_name" list="ingredients" placeholder="Add an Ingredient" id="ingredientInput">
+        <input type="hidden" name="form_type" value="add_ingredient">
+        <input type="hidden" name="meal_id" value="{{ chosen_meal.id }}">
+
+        <datalist id="ingredients">
+            {% for i in ingredients %}
+                <option>{{ i.name }}</option>
+            {% endfor %}
+        </datalist>
+        <button type="submit" class="edit-btn" id="addButton">Add Ingredient</button>
+    </form>
+</div>
+
+{{ ingredients_list|json_script:"ingredients_list" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("ingredientInput");
+    const button = document.getElementById("addButton");
+
+    button.disabled = true;
+    input.addEventListener("input", function() {
+        const val = input.value.trim().toLowerCase();
+        const options = JSON.parse(document.getElementById("ingredients_list").textContent);
+
+        if (!options.includes(val) || val === "" )
+            button.disabled = true;
+        else
+            button.disabled = false;
+    });
+});
+</script>

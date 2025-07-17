@@ -1,0 +1,80 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<div class="title-bar">
+    <h1>Edit Meals</h1>
+    <a href="{% url 'create-meal' %}" class = "new-meal-btn"> Create a New Meal </a>
+</div>
+
+<table class = "edit-table">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Meal Name</th>
+            <th>
+                Category
+                <select name="filter" id="categoryDropdown" onchange="location = this.value;" class="dropdown-icon">
+                    <option value="{% url 'edit-meals-view' %}" {% if not category %}selected{% endif %}>All</option>
+                    <option value="?category=meat" {% if category == 'meat' %}selected{% endif %}>Meat/Poultry</option>
+                    <option value="?category=fish" {% if category == 'fish' %}selected{% endif %}>Fish/Seafood</option>
+                    <option value="?category=pasta" {% if category == 'pasta' %}selected{% endif %}>Pasta/Rice</option>
+                    <option value="?category=eggs" {% if category == 'eggs' %}selected{% endif %}>Eggs/Dairy</option>
+                    <option value="?category=other" {% if category == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for m in meals %}
+        <tr>
+            <td>
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="submit" class="edit-icon" value="Edit &#9998;">
+                    <input type="hidden" name="form_type" value="choose_meal">
+                    <input type="hidden" name="meal_id" value="{{ m.id }}">
+                </form>
+            </td>
+            <td>{{ m.name }}</td>
+            <td>
+                {% if m.category == "meat" %}Meat / Poultry {% endif %}
+                {% if m.category == "fish" %}Fish / Seafood{% endif %}
+                {% if m.category == "pasta" %}Pasta / Rice{% endif %}
+                {% if m.category == "eggs" %}Eggs / Dairy{% endif %}
+                {% if m.category == "other" %}Other{% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<div id="toast" class="toast"></div>
+<script>
+function showToast(message, duration = 1500) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+
+    // Reset the class to restart animation
+    toast.classList.remove("show");
+
+    // Force reflow to apply the reset
+    void toast.offsetWidth; // triggers a reflow
+
+    // Now add .show to trigger transition
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, duration);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const msg = localStorage.getItem('showToast');
+  if (msg) {
+    showToast(msg);
+    localStorage.removeItem('showToast');
+  }
+});
+
+</script>
+
+{% endblock %}

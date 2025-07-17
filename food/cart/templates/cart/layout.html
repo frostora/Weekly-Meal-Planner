@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=0.8, minimum-scale=0.8" >
+        <title>Weekly Meals Planner</title>
+        <script>
+            function getNormalizedPath() {
+                return window.location.pathname.replace(/\/\d+\/$/, '/');
+            }
+                window.addEventListener("beforeunload", function() {
+                localStorage.setItem("scrollPos", window.scrollY);
+                localStorage.setItem("lastPage", getNormalizedPath());
+            });
+
+            window.addEventListener("load", function() {
+                if (localStorage.getItem("lastPage") === getNormalizedPath()){
+                    const scrollPos = localStorage.getItem("scrollPos");
+                    if (scrollPos) {
+                        window.scrollTo(0, parseInt(scrollPos));
+                    }
+                }   
+                localStorage.removeItem("scrollPos");
+                localStorage.removeItem("lastPage");
+            });
+        </script>
+
+        <style>
+
+            html, body {
+            overflow-x: hidden;  /* prevent horizontal scroll */
+            box-sizing: border-box; /* prevent width overflow */
+            }
+
+    
+
+            *,
+            *::before,
+            *::after {
+            box-sizing: inherit; /* apply box-sizing to all elements */
+            }
+            table {
+                border-collapse: separate;
+                border-spacing: 0 8px;
+                width: 100%;
+                font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+                font-size: 15px;
+                color: #333;
+            }
+
+            th {
+                background-color: #f8f9fa;
+                font-weight: 600;
+                padding: 12px 16px;
+                text-align: left;
+                color: #555;
+                border-bottom: 2px solid #bbb; 
+                /* no vertical borders on headers */
+            }
+
+            td {
+                background-color: #fff;
+                padding: 12px 16px;
+                vertical-align: middle;
+                border-bottom: 1.5px solid #ccc; 
+            }
+
+            /* To avoid double borders between cells, remove left border from first td and right border from last td */
+            tbody tr td:first-child {
+                border-left: none;
+            }
+
+            tbody tr td:last-child {
+                border-right: none;
+            }
+
+
+            body {
+                padding: 0 10px;
+                font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            }
+
+            h1, h2, h3{
+                color: rgb(66, 66, 66);
+                text-align: center;
+                font-weight: 600; /* optional: makes it semi-bold for clarity */
+                margin-bottom: 20px; /* spacing below title */
+                font-size: 30px;
+            }
+
+            .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            max-width: 100%;
+            overflow: visible;
+            }
+
+            .tooltip-text {
+            visibility: hidden;
+            max-width: 90vw;  /* limits width to viewport */
+            box-sizing: border-box;
+            word-wrap: break-word;
+            width: 320%;
+            min-width: 320px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            font-size: 16px;
+            padding: 5px;
+            position: absolute;
+            z-index: 10;
+            top: 135%; /* above the icon */
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            }
+
+            .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+            }
+
+            .info-icon {
+                display: inline-block;
+                width: 18px;
+                height: 18px;
+                line-height: 18px;
+                border-radius: 50%;
+                border: 2px solid #222;
+                background-color: #ffffff;
+                color: rgb(66, 66, 66);
+                text-align: center;
+                font-size: 14px;
+                font-weight: bold;
+                font-family: Arial, sans-serif;
+            }
+
+           .add-meal-btn {
+                background-color: #f0f0f0;
+                border: none;
+                color: #007BFF;
+                font-size: 18px;
+                font-weight: 500;
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                cursor: pointer;
+                transition: background-color 0.2s ease, transform 0.1s ease;
+            }
+
+            .add-meal-btn:hover {
+                background-color: #e0e0e0;
+                transform: scale(1.1);
+            }
+
+            .add-meal-btn.selected {
+                background-color: #007BFF;
+                color: #f0f0f0;
+            }
+
+            .delete-meal-btn {
+                background-color: #f7d7d7;       /* soft red background */
+                color: #c0271a;                  /* deep red text */
+                padding: 4px 8px;
+                font-size: 12px;
+                border: none;       /* light red border */
+                border-radius: 50%;
+                cursor: pointer;
+                margin-left: 6px;
+                transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            }
+
+            .delete-meal-btn:hover {
+                background-color: #f8d7da;       /* darker soft red */
+                border-color: #f1b0b7;
+                color: #a71d2a;                  /* even deeper red */
+            }
+
+            .suggested-meal-btn {
+                padding: 6px 12px;
+                font-size: 0.9em;
+                background-color: white;
+                border: 1px solid #9370DB;
+                color: #6f42c1; /* darker variant of purple */
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+            }
+
+            .suggested-meal-btn:hover {
+                background-color: #5a32a3; /* lighter background */
+                color: #f4f0fc; /* slightly darker text on hover */
+                transform: scale(1.05);
+            }
+
+            .new-meal-btn {
+                cursor: pointer;
+                border-radius: 6px;
+                font-weight: 600;
+                font-size: 17px;
+                padding: 10px 22px;
+                transition: background-color 0.25s ease, transform 0.1s ease, box-shadow 0.2s ease;
+                user-select: none;
+                text-decoration: none;
+                display: inline-block;
+                text-align: center;    
+                background-color: #3498db;
+                color: white;
+                border: none;
+                box-shadow: 0 3px 6px rgba(0, 123, 255, 0.4);
+            }
+
+            .new-meal-btn:hover,
+            .new-meal-btn:focus {
+            background-color: #2874a7;
+            box-shadow: 0 5px 12px rgba(0, 86, 179, 0.6);
+            transform: scale(1.05);
+            outline: none;
+            }
+
+            .new-meal-btn:active {
+            transform: scale(1);
+            box-shadow: 0 3px 6px rgba(0, 86, 179, 0.5);
+            }
+
+            .edit-btn {
+            display: inline-block;
+            padding: 5px 12px;
+            background-color: #3498db;
+            color: white;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            }
+
+            .edit-btn:hover, .edit-btn:focus {
+            background-color: transparent;
+            color: #3498db; 
+            border: 2px solid #3498db;
+            cursor: pointer;
+                transform: scale(1.05);
+
+            }
+             .confirm-btn-main {
+            border: 2px solid #28a745; /* Bootstrap green */
+            background-color: #28a745; /* green background on hover */
+            color: white;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            }
+
+            .confirm-btn-main:hover {
+            background-color: white;
+            border: 2px solid #28a745; /* Bootstrap green */
+            color: #28a745;
+            }
+
+            .confirm-btn {
+            background-color: white;
+            border: 2px solid #28a745; /* Bootstrap green */
+            color: #28a745;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            }
+
+            .confirm-btn:hover {
+            background-color: #28a745; /* green background on hover */
+            color: white;
+            }
+
+            .confirm-btn:disabled{
+                background-color: #f5f5f5;
+                border-color: #ccc;
+                color: #aaa;
+                cursor: not-allowed;
+            }
+
+            .discard-btn {
+            background-color: white;
+            border: 2px solid #e07b62;
+            color: #e07b62;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            }
+
+            .discard-btn:hover {
+            background-color: #dc6d48; 
+            color: white;
+            }
+
+           .delete-btn {
+                background-color: #b32f26;   /* solid danger red */
+                border: none;
+                color: white;
+                text-decoration: none;
+                padding: 7px 10px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 700;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                transition: background-color 0.3s ease;
+            }
+
+            .delete-btn:hover {
+                background-color: #83021a;   /* darker on hover */
+            }
+
+
+            #ingredientInput {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1.5px solid #ccc;
+            border-radius: 5px;
+            width: 250px;
+            transition: border-color 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            }
+
+            #ingredientInput:focus {
+            outline: none;
+            border-color: #3a7bd5; /* subtle blue on focus */
+            box-shadow: 0 0 5px rgba(58, 123, 213, 0.5);
+            }
+
+            
+            .edit-btn:disabled {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+            color: #aaa;
+            cursor: not-allowed;
+            }
+
+            nav {
+            background-color: #444; /* dark gray */
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            user-select: none;
+            position: relative;
+            }
+
+            nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            height: 50px;
+            }
+
+            nav ul li {
+            position: relative;
+            margin-right: 25px;
+            }
+
+            nav ul li:last-child {
+            margin-right: 0;
+            }
+
+            nav ul li a {
+            color: #eee;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+            display: block;
+            }
+
+            nav ul li a:hover {
+            background-color: #666; /* lighter gray hover */
+            color: #fff;
+            }
+
+            nav ul li ul {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            height: auto;  
+            max-height: none;
+            background: #555;
+            display: none;          /* hide by default */
+            min-width: 180px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            z-index: 1000;
+            }
+
+            nav ul li:hover > ul {
+            display: block;        /* show on hover */
+            }
+
+            nav ul li ul li {
+            margin: 0;
+            padding: 0;           /* remove margin/padding if any */
+            }
+
+            nav ul li ul li a {
+            font-weight: normal;
+            padding: 10px 20px;
+            font-size: 13px;
+            line-height: 1.5; /* or 20-24px */
+            color: #ddd;
+            display: block;        /* ensure full width */
+            }
+
+            nav ul li ul li a:hover {
+            background-color: #777;
+            color: #fff;
+            }
+
+            
+           
+            .meal-box {
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 30px 25px;
+            background: #fefefe;
+            border-radius: 10px;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.12);
+            font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            }
+
+            .meal-box h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+            }
+
+            .content-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            }
+
+            .form-section h2 {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #34495e;
+            }
+
+            .form-section input[type="text"] {
+            width: 93.5%;
+            padding: 10px 14px;
+            font-size: 1rem;
+            border: 1.8px solid #ccc;
+            border-radius: 6px;
+            transition: border-color 0.3s ease;
+            }
+
+            .form-section input[type="text"]:focus {
+            border-color: #3498db;
+            outline: none;
+            }
+
+            .form-section label {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            cursor: pointer;
+            color: #444;
+            }
+
+            .form-section input[type="radio"] {
+            margin-right: 12px;
+            accent-color: #3498db;
+            }
+
+            
+            .separator{
+            margin-top: 20px;     /* add space above border */
+            border-top: 1px solid #ddd;
+            margin-bottom: 20px;     /* add space above border */
+            }
+
+            .button-group form {
+            border-top: 2px solid #ddd;
+            padding-top: 15px;    /* increase space below border */
+            flex: 0 0 50%;
+            flex-wrap: nowrap;
+            display: flex;
+            box-sizing: border-box;
+            }
+
+            .button-group-ing {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px 20px; /* 15px horizontal, 20px vertical */
+            }
+            .button-group-ing  #save_btn {
+                width: 150px;
+            }
+
+            .button-group form input[type="submit"] {
+            width: 49%;
+            box-sizing: border-box;
+            padding-left: 12px;
+            padding-right: 12px;
+            /* keep other button styles */
+            }
+
+           .button-group form {
+            border-top: 2px solid #ddd;
+            padding-top: 15px;    /* increase space below border */
+            flex: 0 0 50%;
+            flex-wrap: nowrap;
+            display: flex;
+            box-sizing: border-box;
+            }
+
+            .button-group form input[type="submit"] {
+            width: 49%;
+            box-sizing: border-box;
+            padding-left: 12px;
+            padding-right: 12px;
+            /* keep other button styles */
+            }
+
+
+            /* Table styling */
+            .edit-table {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px; /* space between rows */
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            }
+
+            .edit-table thead tr {
+            background-color: #f5f7fa;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            }
+
+            .edit-table th, 
+            .edit-table td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            }
+
+            .edit-table tbody tr {
+            background-color: #fff;
+            box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+            transition: background-color 0.2s ease;
+            border-radius: 8px;
+            }
+
+            .edit-table tbody tr:hover td{
+            background-color: #f4f4f4;
+            }
+            
+
+            .edit-table th:first-child,
+            .edit-table td:first-child {
+                width: 90px;           /* Fixed narrow width */
+                text-align: center;    /* Center content */
+                white-space: nowrap;   /* Prevent wrapping if text is longer */
+                padding: 0 5px;        /* Tight padding */
+            }
+
+            .edit-table th:first-child {
+                font-weight: 500;
+                color: #555;
+                font-size: 30px;
+            }
+            
+            /* Dropdown styling */
+            .dropdown-icon {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            }
+
+            .dropdown-icon:hover,
+            .dropdown-icon:focus {
+            border-color: #2563eb;
+            outline: none;
+            }
+
+            .ingredient-table td.spacer-cell {
+                width: 3px;
+                background: #e0e0e0;   /* light grey line */
+                border: none;
+                box-shadow: none;
+                padding: 0;
+            }
+            
+
+            .ingredient-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px; /* space between rows */
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            }
+
+            .ingredient-table thead tr {
+            background-color: #f5f7fa;
+            text-align: left;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #333;
+            }
+
+            .ingredient-table th, 
+            .ingredient-table td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            }
+
+            .ingredient-table tbody tr {
+            background-color: #fff;
+            box-shadow: 0 1px 4px rgb(0 0 0 / 0.1);
+            transition: background-color 0.2s ease;
+            border-radius: 8px;
+            }
+
+            .ingredient-table th:first-child,
+            .ingredient-table td:first-child {
+                width: 90px;           /* Fixed narrow width */
+                text-align: center;    /* Center content */
+                white-space: nowrap;   /* Prevent wrapping if text is longer */
+                padding: 0 5px;        /* Tight padding */
+            }
+
+            .ingredient-table th:first-child {
+                font-weight: 500;
+                color: #555;
+                font-size: 30px;
+            }
+            
+
+
+            /* Highlight right half on hover */
+            .pair-left.edit-cell:hover,
+            .pair-left.edit-cell:hover + .name-cell,
+            .pair-left.name-cell:hover,
+            .pair-left.name-cell:hover + .edit-cell {
+            background-color: #f4f4f4;
+            cursor: pointer;
+            }
+
+            .pair-right.edit-cell:hover,
+            .pair-right.edit-cell:hover + .name-cell,
+            .pair-right.name-cell:hover,
+            .pair-right.name-cell:hover + .edit-cell {
+            background-color: #f4f4f4;
+            cursor: pointer;
+            }
+
+            .edit-cell {
+            text-align: right;  /* align icon to the right */
+            width: 40px;        /* fixed width for icon cell */
+            cursor: pointer;
+            }
+
+            .edit-icon {
+            background: none;
+            border: none;
+            color:		#5A8BCC;       /* Bootstrap blue, noticeable but not harsh */
+            font-size: 16px;      /* Slightly larger for the icon */
+            cursor: pointer;
+            padding: 2px 6px;     /* Tight padding to keep it small */
+            border-radius: 3px;   /* Slight rounding for better feel */
+            transition: background-color 0.2s ease;
+        }
+
+        .portion-count {
+            float: right;
+            color: #666;
+            margin-left: 8px;
+        }
+
+        input[type=number] {
+            width: 80px;
+            padding: 6px 10px;
+            font-size: 1rem;
+            border: 1.5px solid #ccc;
+            border-radius: 5px;
+            outline-offset: 2px;
+            outline-color: #3498db;
+            }
+
+
+        .title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .select-meal-container {
+            display: flex;
+            align-items: flex-start;
+        }
+
+                
+        .suggestions-container {
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            background: #f9f9f9;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            padding: 5px 20px; /* more padding for comfort */
+            border: 1px solid #ddd;
+            flex-shrink: 0;
+            width: 40%;
+            min-width: 300px;
+
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif; /* modern, clean font */
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* Headers improvements */
+        .suggestions-container h2 {
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 0.5em;
+            color: #222;
+            border-bottom: 2px solid #9370DB;  
+            padding-bottom: 0.25em;
+        }
+
+        .suggestions-container h4 {
+            font-weight: 600;
+            font-size: 1.15rem;
+            margin-top: 1em;
+            margin-bottom: 0.4em;
+            color: #7458ae;  
+        }
+
+        /* Lists */
+        .suggestions-container ul {
+            list-style-type: disc;
+            margin-left: 1.2em;
+            margin-bottom: 1em;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        /* List items: a bit more spacing */
+        .suggestions-container ul li {
+            margin-bottom: 0.35em;
+        }
+
+            
+
+        .meal-table-with-button {
+            display: flex;
+            align-items: stretch;
+            flex-grow: 1;
+        }
+
+
+       .toggle-suggestions-btn {
+        align-self: stretch;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        background: #a789e2;       
+        border: none;
+        font-size: 2.6rem;
+        cursor: pointer;
+        color: #ffffff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+
+        /* make it scale vertically based on content */
+        padding: 12px 0;  /* vertical padding to make it taller */
+        }
+
+        .toggle-suggestions-btn:hover {
+            background: #9370DB;         /* darker gray on hover */
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            transform: scale(1.005);
+        }
+
+        
+        .email-form {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .email-form form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .email-form input[type="text"],
+        .email-form input[type="email"],
+        .email-form textarea {
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .email-form textarea[name="message"] {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .email-form input[type="text"]:focus,
+        .email-form input[type="email"]:focus,
+        .email-form textarea:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 5px rgba(52,152,219,0.5);
+            outline: none;
+        }
+
+        .email-form input[type="submit"] {
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.3s;
+        }
+
+        .email-form input[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        .email-form input[type="submit"]:disabled {
+            background-color: #f5f5f5;
+            border-color: #ccc;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .toast {
+        opacity: 0;
+        min-width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1000;
+        left: 50%;
+        bottom: 30px;
+        font-size: 17px;
+        transform: translateX(-50%);
+        transition: opacity 0.5s ease, bottom 0.5s ease;
+        pointer-events: none; /* prevent blocking clicks */
+        }
+
+        .toast.show {
+        opacity: 1;
+        bottom: 50px; /* slight move up */
+        }
+
+
+        .about-content {
+            max-width: 700px;
+            margin: 0 auto;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .about-content h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 5px;
+        }
+
+        .about-content h3 {
+            font-size: 1.5rem;
+            margin-top: 20px;
+            border-bottom: 1.7px solid #ccc;
+        }
+
+        .about-content ol {
+            padding-left: 20px;
+        }
+
+        .about-content ol li {
+            margin-bottom: 12px;
+        }
+
+        .about-content ul {
+            margin-top: 8px;
+            padding-left: 20px;
+            list-style-type: disc;
+        }
+
+        .about-content strong {
+            color: #3498db;
+        }
+
+        .about-content em {
+            font-style: italic;
+            color: #555;
+        }
+
+        .edit-header-cell {
+        width: 100px;
+        text-align: right;
+        padding-right: 10px;
+        }
+
+        .jump-link {
+            font-size: 0.95rem;
+            color: #0056b3;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 3px;
+            margin-right: 15px;
+            transition: color 0.2s;
+            position: absolute;
+            right: 0;
+        }
+
+        .jump-link:hover {
+            color: #003f80;  /* even darker on hover */
+        }
+
+        .planner-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px; /* spacing between elements */
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+
+        .planner-table th:last-child,
+        .planner-table td:last-child {
+            width: 100px;  
+            padding: 0px;
+        }
+
+        .missing-label {
+        position: relative;
+        cursor: pointer;
+        color: #706597;
+        font-size: 0.9rem;
+        margin-left: 6px;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+        }
+
+        
+        .missing-label:hover {
+        opacity: 1;           /* slightly brighter on hover */
+        }
+
+        .custom-tooltip {
+        visibility: hidden;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        border-radius: 4px;
+        padding: 6px 8px;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%; /* position above */
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        pointer-events: none;
+        }
+
+        .missing-label:hover .custom-tooltip {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        }
+
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .confirm-btn-reset, .cancel-btn {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .confirm-btn-reset {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .confirm-btn-reset:hover {
+            background-color: #2e87c3;
+        }
+
+        .cancel-btn {
+            background-color: #ccc;
+        }
+
+        .cancel-btn:hover {
+            background-color: #c3c3c3;
+        }
+
+
+        .login-container {
+            max-width: 400px;
+            margin: 60px auto;
+            padding: 30px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: #fff;
+            text-align: center;
+        }
+
+        .login-message {
+            background: #ffe0e0;
+            color: #900;
+            border: 1px solid #f5c2c2;
+            padding: 10px;
+            margin-bottom: -50px;
+            border-radius: 8px;
+        }
+
+        .login-form input[type="email"],
+        .login-form input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .login-btn:hover {
+            background-color: #2980b9;
+        }
+
+
+        .user-page {
+            max-width: 500px;
+            margin: 100px auto;
+            text-align: center;
+        }
+
+        .logout-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .create-user-btn {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #3498db;
+            text-decoration: none;
+            border: 1px solid transparent;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .create-user-btn:hover {
+            background-color: #ecf6fc;
+        }
+
+        .main-nav {
+            border-radius: 5px;   /* Slight rounding for better feel */
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-list > li {
+            margin-right: 20px;
+            position: relative; /* for dropdown positioning */
+        }
+
+        /* Push the last nav item (User) to the right */
+        .nav-user {
+            margin-left: auto;
+        }
+
+        /* Dropdown styling */
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            list-style: none;
+            padding: 10px 0;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 150px;
+            z-index: 100;
+        }
+
+        .dropdown:hover > .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu li {
+            padding: 8px 20px;
+        }
+
+        .dropdown-menu li a {
+            color: #333;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-menu li a:hover {
+            background-color: #f0f0f0;
+        }
+
+
+        @media (max-width: 600px) {
+
+        .main-nav {
+            position: relative;
+            display: flex;
+            justify-content: flex-end;
+            background: #444;
+            padding: 10px 20px;
+            max-width: 100vw;  /* ensure no overflow */
+            box-sizing: border-box; /* include padding in width */
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100%;
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+            background: #444;
+            flex-direction: column;
+            padding: 0;
+            gap: 20px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .nav-list li a {
+            color: white;
+            text-decoration: none;
+            font-size: 30px;
+        }
+        .nav-list .nav-user {
+            margin-left: 0;  /* remove any auto margin pushing right */
+            align-self: center; /* force center */
+        }
+
+        .jump-link{
+            display: none;
+        }
+
+        .burger-menu {
+            display: flex!important;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+            width: 30px;
+            position: relative;
+            z-index: 11000;  
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .burger-menu span {
+            display: block;
+            height: 3px;
+            width: 100%;
+            background: white;
+        }
+
+        .nav-list.show {
+            transform: translateX(0);
+        }
+
+         .select-meal-container {
+        flex-direction: row;  /* horizontal on mobile */
+        align-items: stretch;
+        flex-wrap: wrap;   
+        }
+
+        .suggestions-container {
+            width: 75%;
+            min-width: auto;
+            margin: 0;
+            padding: 10px;
+            display: none;  /* hidden by default */
+            flex-wrap: nowrap;
+        }
+
+        .suggestions-container.active-suggestions {
+            display: block;
+            width: 75%;
+        }
+
+        .meal-table-with-button {
+        width: 75%;      /* or adjust to 70-80% */
+        }
+
+        .meal-table-with-button.hidden-on-mobile {
+            display: none;  /* hide the table when class applied */
+        }
+
+        .toggle-suggestions-btn {
+        height: auto;           /* fallback */
+            align-self: stretch;    /* ensure stretch */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            font-size: 2rem;
+            margin: 0 6px;
+            background: #9370DB;
+            border: none;
+            color: #fff;
+        }
+
+         .meal-table-with-button,
+        .suggestions-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .meal-table-with-button table {
+            flex-grow: 1;
+            height: 100%;
+        }
+
+        
+    }
+
+    #shopping-list-table th:nth-child(2),
+        #shopping-list-table th:nth-child(3),
+        #shopping-list-table td:nth-child(2),
+        #shopping-list-table td:nth-child(3) {
+        text-align: center;
+        }
+
+
+        </style>
+    </head>
+    <body>
+        <nav class="main-nav">
+            <div class="burger-menu" id="burgerMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <ul class="nav-list" id="navList">
+                <li><a href="{% url 'index' %}">Home</a></li>
+                <li class="dropdown">
+                <a>Customization ▼</a>
+                <ul>
+                    <li><a href="{% url 'edit-meals-view' %}">Edit Meals</a></li>
+                    <li><a href="{% url 'edit-ingredients-view' %}">Edit Ingredients</a></li>
+                </ul>
+                </li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+                <li class="nav-user"><a href="/user">User</a></li>
+            </ul>
+        </nav>
+        {% block body %}
+        {% endblock %}
+
+            <script>
+        function toggleNavMenu() {
+            const navList = document.querySelector('.nav-list');
+            navList.classList.toggle('show');
+        }
+
+        document.getElementById('burgerMenu').addEventListener('click', () => {
+            document.getElementById('navList').classList.toggle('show');
+        });
+        </script>
+    </body>
+</html>

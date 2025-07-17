@@ -1,0 +1,13 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<br>
+
+<div class="user-page">
+<h1>Welcome!</h1>
+  
+    <p><strong>Email:</strong> {{request.user.email}}</p>
+
+<a href="{% url 'logout'%}" class="logout-btn">Log out</a>
+</div>
+{% endblock %}

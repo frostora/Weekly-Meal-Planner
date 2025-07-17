@@ -1,0 +1,126 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<div class="planner-header">
+  <h1>Weekly Meals Planner</h1>
+  <a href="#shopping-list" class="jump-link">Shopping List ↓</a>
+</div>
+
+<table class="planner-table">
+  <thead>
+    <tr>
+      <th>Day</th><th>Lunch</th><th>Dinner</th>
+      <th>
+    <a href="{% url 'select-meal' %}" class="edit-btn">Edit &#9998;</a>
+      </th>
+    </tr>    
+  </thead>
+  <tbody>
+    {% for day, pair in week_meal_pairs %}
+    <tr>
+      <td><b>{{ day }}</b></td>
+      <td>
+        {% for meal in pair.0 %}
+        <div>
+          {{ meal.name }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        </div>
+      </td>
+      <td>
+        {% for meal in pair.1 %}
+        <div>
+          {{ meal.name }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+        </div>
+      </td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<br>
+
+
+<h2 id="shopping-list">Shopping List</h2>
+<table id="shopping-list-table">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity to Buy</th>
+            <th>Leftover Portions 
+                <div class="tooltip-container">
+                    <span class="info-icon"> i </span>
+                    <span class="tooltip-text">
+                        Ingredients left over after cooking your selected meals. Quantities are expressed in portions, based on the portion size set for each ingredient.
+                    </span>
+                </div>
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, dict in cart.items %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ dict.to_buy }}</td>
+            <td>
+                {% if dict.extra != 0 %}
+                    {{ dict.extra }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+
+
+<form id="reset-form" method="post" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="reset">
+    <button type="button" class="delete-btn" id="reset-btn">RESET</button>
+</form>
+
+<div id="confirm-modal" class="modal hidden">
+    <div class="modal-content">
+        <p>Are you sure you want to reset your planner? This deletes all chosen meals and empties your shopping cart, while ingredients and recipes are preserved. This button is used at the end of the week to start planning for the following one.</p>
+        <button id="confirm-yes" class="confirm-btn-reset">Yes, Reset</button>
+        <button id="confirm-no" class="cancel-btn">Cancel</button>
+    </div>
+</div>
+
+<script>
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.remove('hidden');
+  });
+document.getElementById('confirm-no').addEventListener('click', () => {
+    document.getElementById('confirm-modal').classList.add('hidden');
+});
+
+document.getElementById('confirm-yes').addEventListener('click', () => {
+    document.getElementById('reset-form').submit();
+});
+
+
+document.querySelectorAll('.tooltip-container').forEach(container => {
+    container.addEventListener('mouseenter', () => {
+        const tooltip = container.querySelector('.tooltip-text');
+        tooltip.style.left = '50%';
+        tooltip.style.right = 'auto';
+        tooltip.style.transform = 'translateX(-50%)';
+
+        requestAnimationFrame(() => {
+            const rect = tooltip.getBoundingClientRect();
+            const overflowRight = rect.right - window.innerWidth;
+            const overflowLeft = -rect.left;
+
+            if (overflowRight > 0) {
+                tooltip.style.left = `calc(50% - ${overflowRight}px)`;
+            } else if (overflowLeft > 0) {
+                tooltip.style.left = `calc(50% + ${overflowLeft}px)`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

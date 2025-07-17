@@ -1,0 +1,161 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<div class="meal-box">
+  {% if editing %}
+  <h1>Edit Ingredient</h1>
+  {% else %}
+  <h1>Create an Ingredient</h1>
+  {% endif %}
+
+    {% csrf_token %}
+    <div class="content-sections">
+      <div class="form-section">
+        <h2>Ingredient Name</h2>
+        <input form="create_ingredient"
+          type="text"
+          id="name_input"
+          name="ingredient_name"
+          placeholder="Enter name"
+          maxlength="64"
+          value="{% if editing %}{{ chosen_ingredient.name }}{% endif %}"
+        />
+        <br>
+        <br>
+        <label for="portion_count">Portions:</label>
+        <input form="create_ingredient"
+          type="number"
+          id="portion_count"
+          name="portion_count"
+          min="1"
+          value="{% if editing %}{{ chosen_ingredient.portions }}{% else %}1{% endif %}"
+          required
+        />
+      </div>
+    </div>
+  
+      <div class="separator"></div>
+
+    <div class="button-group-ing">
+      <form  method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="discard_changes">
+            <input id="discard_btn" type="submit" class="discard-btn" value = "Discard">
+        </form>
+        {% if editing %}
+            <form id="create_ingredient" method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="save_new_ingredient">
+                <input id="save_btn" type="submit" class="confirm-btn" value="Save">
+            </form>
+        {% else %}
+            <form id="create_ingredient" method="post" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="save_new_ingredient">
+                <input id="save_btn" type="submit" class="confirm-btn" value="Create">
+            </form>
+        {% endif %}
+  </form>
+
+      {% if editing %}
+      &nbsp;&nbsp;&nbsp;&nbsp;
+
+      
+      
+      <form id="reset-form" method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="form_type" value="delete_ingredient">
+          <button type="button" class="delete-btn" id="reset-btn">DELETE INGREDIENT</button>
+      </form>
+
+      <div id="confirm-modal" class="modal hidden">
+          <div class="modal-content">
+              <p>Are you sure you want to delete this ingredient?</p>
+              <button type="button" id="confirm-yes" class="confirm-btn-reset">Yes</button>
+              <button type="button" id="confirm-no" class="cancel-btn">Cancel</button>
+          </div>
+      </div>
+      {% endif %}
+    </div>
+
+</div>
+
+
+<script>
+
+
+
+document.addEventListener("DOMContentLoaded", function() {
+    const input = document.getElementById("name_input");
+    const button = document.getElementById("save_btn");
+    const portions = document.getElementById('portion_count');
+
+    button.disabled = true;
+
+    const nameInput = document.getElementById("name_input");
+
+    delete_btn = document.getElementById("reset-btn")
+        if(delete_btn){
+              document.getElementById('reset-btn').addEventListener('click', () => {
+          document.getElementById('confirm-modal').classList.remove('hidden');
+        });
+      document.getElementById('confirm-no').addEventListener('click', () => {
+          document.getElementById('confirm-modal').classList.add('hidden');
+      });
+
+      document.getElementById('confirm-yes').addEventListener('click', () => {
+          reset_values();
+          document.getElementById('reset-form').submit();
+      });
+  }
+
+    function reset_values(){
+        localStorage.removeItem("ing_name");
+        localStorage.removeItem("portions");
+    }
+    document.getElementById("save_btn").addEventListener("click", function() {
+        localStorage.setItem('showToast', 'Ingredient saved successfully!');
+        reset_values();
+    });
+        document.getElementById("discard_btn").addEventListener("click", function() {
+        reset_values();
+    });
+
+    delete_btn = document.getElementById("delete_btn")
+    
+    if (delete_btn){
+        delete_btn.addEventListener("click", function() {
+        reset_values();
+    });
+    }
+
+    // --- Restore saved values on load ---
+    const savedName = localStorage.getItem("ing_name");
+    if (savedName) {
+        nameInput.value = savedName;
+    }
+
+    const savedPortions = localStorage.getItem("portions");
+    if (savedPortions) {
+        portions.value = savedPortions
+    }
+    
+    function validate() {
+        const val = input.value.trim().toLowerCase();
+        localStorage.setItem("ing_name", val);
+        localStorage.setItem("portions", portions.value);
+        
+        if (val.length > 64 || val === "" || portions.value <= 0)
+            button.disabled = true;
+        else
+            button.disabled = false;
+    }
+
+    input.addEventListener("input", validate);
+    portions.addEventListener("change", validate)
+
+    validate(); // initial check on page load
+});
+
+</script>
+{% endblock %}

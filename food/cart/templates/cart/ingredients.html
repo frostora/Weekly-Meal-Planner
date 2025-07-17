@@ -1,0 +1,85 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+
+<div class="title-bar">
+    <h1>Edit Ingredients</h1>
+    <a href="{% url 'create-ingredient' %}" class = "new-meal-btn"> Create an Ingredient </a>
+</div>
+
+<table class="ingredient-table">
+  <tbody>
+        {% for pair in ingredient_pairs %}
+            <tr>
+                {% if pair.0  %}
+                    <td class="pair-left edit-cell"> 
+                        <form method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="submit" class="edit-icon" value="Edit &#9998;">
+                            <input type="hidden" name="form_type" value="choose_ingredient">
+                            <input type="hidden" name="ing_id" value="{{ pair.0.id }}">
+                        </form>
+                    </td>
+                    <td class="pair-left name-cell">
+                        {{pair.0.name}} 
+                        <span class="portion-count">({{ pair.0.portions }})</span>
+                    </td>
+                
+                    <td class="spacer-cell"></td>
+                    {% if pair.1  %}
+                        <td class="pair-right edit-cell"> 
+                            <form method="post" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="submit" class="edit-icon" value="Edit &#9998;">
+                                <input type="hidden" name="form_type" value="choose_ingredient">
+                                <input type="hidden" name="ing_id" value="{{ pair.1.id }}">
+                            </form>
+                        </td>
+                        <td class="pair-right name-cell">
+                            {{pair.1.name}} 
+                            <span class="portion-count">({{ pair.1.portions }})</span>
+                        </td>
+                    {% else %}
+                        <td></td>
+                    {% endif %}
+
+                {% else %}
+                    <td></td>
+                {% endif %}
+            </tr>
+        {% empty %}
+        <p>No ingredients available. Create your first ingredient!</p>
+        {% endfor %}
+  </tbody>
+</table>
+
+<div id="toast" class="toast"></div>
+<script>
+function showToast(message, duration = 1500) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+
+    // Reset the class to restart animation
+    toast.classList.remove("show");
+
+    // Force reflow to apply the reset
+    void toast.offsetWidth; // triggers a reflow
+
+    // Now add .show to trigger transition
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, duration);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const msg = localStorage.getItem('showToast');
+  if (msg) {
+    showToast(msg);
+    localStorage.removeItem('showToast');
+  }
+});
+
+</script>
+{% endblock %}

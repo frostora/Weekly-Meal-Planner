@@ -1,0 +1,72 @@
+{% extends "cart/layout.html" %}
+
+{% block body %}
+<h1>Contact</h1>
+
+<div class="email-form">
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="Name (Optional)" maxlength="64">
+        <input type="email" name="email" id="input_mail" placeholder="Email address" required>
+        <textarea type="text" name="message" id="input_msg" placeholder="Enter your message" maxlength="500" minlength="5"></textarea>
+        <input type="submit" value="SEND" id="send_mail" class="send-btn">
+        <input type="hidden" name="form_type" value="contact">
+    </form>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showToast(message) {
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+
+    // Reset the class to restart animation
+    toast.classList.remove("show");
+
+    // Force reflow to apply the reset
+    void toast.offsetWidth; // triggers a reflow
+
+    // Now add .show to trigger transition
+    toast.classList.add("show");
+
+    setTimeout(() => {
+        toast.classList.remove("show");
+    }, 3500);
+}
+
+function checkEmailStatus(){
+    console.log("Checkinc");
+    const result = "{{ result }}";
+
+    if (result == 1)
+        showToast("Email successfully sent")
+    else if(result == 0)
+        showToast("ERROR! Could not send email. Try again later")
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const button = document.getElementById("send_mail");
+    const input_msg = document.getElementById("input_msg");
+    const input_mail = document.getElementById("input_mail");
+    button.disabled = true;
+    checkEmailStatus();
+    
+    function validate() {
+        const mail = input_mail.value.trim().toLowerCase();
+        const msg = input_msg.value.trim().toLowerCase();
+
+        if (mail.length <= 0 || msg.length <= 0)
+            button.disabled = true;
+        else
+            button.disabled = false;
+    }
+
+    input_mail.addEventListener("input", validate);
+    input_msg.addEventListener("input", validate)
+
+    validate(); // initial check on page load
+});
+
+</script>
+{% endblock %}

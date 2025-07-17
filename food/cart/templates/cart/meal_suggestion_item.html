@@ -1,0 +1,20 @@
+<li>
+    {{ meal.name }}
+    {% if missing %}
+        <span class="missing-label">
+        (missing: {{ missing|length }})
+              <span class="custom-tooltip">
+                     
+                    {% for ing in missing %}
+                        {{ ing }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+              </span>
+        </span>
+    {% endif %}
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <input type="hidden" name="slot_id" value="{{ slot_id }}">
+        <input type="hidden" name="form_type" value="add_meal">
+        <button class="suggested-meal-btn" type="submit" name="add_meal_id" value="{{ meal.id }}">Add</button>
+    </form>
+</li>
